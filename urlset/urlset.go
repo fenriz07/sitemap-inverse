@@ -14,16 +14,17 @@ type UrlSet struct {
 
 type Url struct {
 	XMLName xml.Name `xml:"url"`
-	Loc     string   `xml:"loc"`
+	Loc     string   `xml:"loc,attr"`
+	Url     []string `xml:"url-external"`
 }
 
-func PrintXML(pages []string) {
+func PrintXML(pages map[string][]string) {
 
 	urls := make([]Url, 0, len(pages))
 
-	for _, url := range pages {
+	for k, u := range pages {
 
-		urls = append(urls, Url{Loc: url})
+		urls = append(urls, Url{Loc: k, Url: u})
 	}
 
 	urlset := UrlSet{
