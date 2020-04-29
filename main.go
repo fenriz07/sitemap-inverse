@@ -13,7 +13,6 @@ import (
 	link "github.com/fenriz07/link/students/fenriz"
 	"github.com/fenriz07/sitemap-inverse/urlset"
 	"github.com/fenriz07/sitemap/helpers"
-	//"github.com/fenriz07/link"
 )
 
 func main() {
@@ -30,9 +29,18 @@ func main() {
 		os.Exit(2)
 	}
 
+	//Obtenemos las paginas
 	pages := bfs(*urlFlag, *depthFlag)
 
-	urlset.PrintXML(pages)
+	externalurls := make(map[string][]string)
+
+	for _, page := range pages {
+		v := get(page, true)
+
+		externalurls[page] = v
+	}
+
+	urlset.PrintXML(externalurls)
 
 	elapsed := time.Since(start)
 
@@ -70,7 +78,7 @@ func bfs(urlStr string, maxDepth int) []string {
 			seen[url] = struct{}{}
 
 			go func() {
-				links := get(url)
+				links := get(url, false)
 
 				linkChanel <- links
 			}()
@@ -103,7 +111,7 @@ func bfs(urlStr string, maxDepth int) []string {
 	return ret
 }
 
-func get(urlStr string) []string {
+func get(urlStr string, inverse bool) []string {
 
 	resp, err := http.Get(urlStr)
 
@@ -128,7 +136,7 @@ func get(urlStr string) []string {
 
 	allLinks := link.ParseHtml(string(body))
 
-	pages := filter(base, createPages(*allLinks, base))
+	pages := filter(base, createPages(*allLinks, base), inverse)
 
 	return pages
 
@@ -154,13 +162,25 @@ func createPages(links []link.Link, base string) []string {
 	return allLinks
 }
 
-func filter(base string, links []string) []string {
+func filter(base string, links []string, inverse bool) []string {
 	var ret []string
 
 	for _, link := range links {
-		if strings.HasPrefix(link, base) {
-			ret = append(ret, link)
+
+		if inverse == false {
+			if strings.HasPrefix(link, base) {
+				ret = append(ret, link)
+			}
+		} else {
+			if !strings.HasPrefix(link, base) && !strings.HasPrefix(link, "/") {
+				ret = append(ret, link)
+			}
 		}
+
+	}
+
+	if inverse == true {
+		return ret
 	}
 
 	return unique(ret)
